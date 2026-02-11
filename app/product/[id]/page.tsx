@@ -9,24 +9,27 @@ import { Product } from '@/types'
 
 export default function ProductPage() {
   const params = useParams()
-  const productId = params.id as string
+  const productId = params?.id // ✅ optional chaining
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`/api/products/${productId}`)
-      .then((res) => {
+    if (!productId) return // stop if no id
+
+    async function fetchProduct() {
+      try {
+        const res = await fetch(`/api/products/${productId}`)
         if (!res.ok) throw new Error('Product not found')
-        return res.json()
-      })
-      .then((data) => {
+        const data: Product = await res.json()
         setProduct(data)
-        setLoading(false)
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error('Failed to load product:', error)
+      } finally {
         setLoading(false)
-      })
+      }
+    }
+
+    fetchProduct()
   }, [productId])
 
   if (loading) {
@@ -65,6 +68,7 @@ export default function ProductPage() {
                 fill
                 className="object-cover"
                 priority
+                unoptimized // ✅ avoids external image issues on Vercel
               />
             </div>
           </div>
